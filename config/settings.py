@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',      # DRF
-    'remover',             # আমাদের AI background remover app
+    'rest_framework',      
+    'remover',             
 ]
 
 MIDDLEWARE = [
