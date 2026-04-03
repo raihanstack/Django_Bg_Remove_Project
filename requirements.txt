@@ -1,5 +1,7 @@
 Django
-requests
+onnxruntime
+numpy
 Pillow
+requests
 python-dotenv
 whitenoise
