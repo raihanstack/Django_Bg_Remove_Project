@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load common environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,21 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5@d3mimklh9+jyg6zj9_37doa^c7ec-tisvi6+y1!o8c3rb2@9'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5@d3mimklh9+jyg6zj9_37doa^c7ec-tisvi6+y1!o8c3rb2@9')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [
-    'rsbgeraser.vercel.app',
-    '.vercel.app',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'rsbgeraser.vercel.app,.vercel.app,localhost,127.0.0.1').split(',')
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://rsbgeraser.vercel.app',
-]
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://rsbgeraser.vercel.app').split(',')
 
 # Application definition
 
