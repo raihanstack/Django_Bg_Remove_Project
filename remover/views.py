@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import os, base64, requests, logging
 from io import BytesIO
 import numpy as np
@@ -117,3 +117,9 @@ def remove_bg_api(request):
         return JsonResponse({'image_processed': True, 'output': output_url})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+def robots_txt(request):
+    return render(request, "robots.txt", content_type="text/plain")
+
+def sitemap_xml(request):
+    return render(request, "sitemap.xml", content_type="application/xml")
