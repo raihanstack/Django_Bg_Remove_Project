@@ -27,13 +27,13 @@ SECRET_KEY = 'django-insecure-5@d3mimklh9+jyg6zj9_37doa^c7ec-tisvi6+y1!o8c3rb2@9
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'rsbgerage.vercel.app',
+    'rsbgeraser.vercel.app',
     'localhost',
     '127.0.0.1',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://rsbgerage.vercel.app',
+    'https://rsbgeraser.vercel.app',
 ]
 
 # Application definition
