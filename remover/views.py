@@ -1,10 +1,9 @@
-import os, threading, time
-import base64
-from io import BytesIO
 from django.shortcuts import render
 from django.conf import settings
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import os, base64
+from io import BytesIO
 from rembg import remove, new_session
 from PIL import Image, UnidentifiedImageError
 import logging
@@ -52,12 +51,15 @@ def home(request):
 
     return render(request, 'index.html')
 
-# API View
-@api_view(['POST'])
+# API View (Pure Django)
+@csrf_exempt
 def remove_bg_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+
     file = request.FILES.get('image')
     if not file:
-        return Response({'error': 'No image provided'}, status=400)
+        return JsonResponse({'error': 'No image provided'}, status=400)
 
     try:
         input_img = Image.open(file)
@@ -71,12 +73,12 @@ def remove_bg_api(request):
         base64_img = base64.b64encode(io_buf.read()).decode('utf-8')
         output_url = f"data:image/png;base64,{base64_img}"
 
-        return Response({
+        return JsonResponse({
             'image_processed': True,
             'output': output_url
         })
     except UnidentifiedImageError:
-        return Response({'error': 'Invalid image format. Please upload a valid image.'}, status=400)
+        return JsonResponse({'error': 'Invalid image format. Please upload a valid image.'}, status=400)
     except Exception as e:
         logger.error(f"Error removing background: {e}")
-        return Response({'error': str(e)}, status=500)
+        return JsonResponse({'error': str(e)}, status=500)

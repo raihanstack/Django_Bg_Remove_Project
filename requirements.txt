@@ -1,11 +1,5 @@
-asgiref
 Django
-djangorestframework
-numpy==1.26.4
-onnxruntime==1.17.1
-pillow
 rembg
-requests
 whitenoise
 python-dotenv
-opencv-python-headless
+onnxruntime-cpu

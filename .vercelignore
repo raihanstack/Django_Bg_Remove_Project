@@ -2,5 +2,8 @@ db.sqlite3
 .venv/
 media/
 static/
+staticfiles/
 .git/
 README.md
+*.pyc
+__pycache__/
