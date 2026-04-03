@@ -28,6 +28,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     'rsbgeraser.vercel.app',
+    '.vercel.app',
     'localhost',
     '127.0.0.1',
 ]

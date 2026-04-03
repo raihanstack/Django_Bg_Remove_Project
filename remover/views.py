@@ -1,60 +1,48 @@
-import os, uuid, threading, time
+import os, threading, time
+import base64
+from io import BytesIO
 from django.shortcuts import render
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import ImageUpload
 from rembg import remove, new_session
 from PIL import Image, UnidentifiedImageError
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Set U2NET_HOME to /tmp so rembg downloads the model to Vercel's writable ephemeral storage
+os.environ["U2NET_HOME"] = "/tmp"
+
 # Initialize the ONNX session once at startup to significantly improve response time per request
 session = new_session("u2net")
-
-def schedule_image_deletion(instance_id, delay=120):
-    def delete_task():
-        time.sleep(delay)
-        try:
-            from .models import ImageUpload
-            instance = ImageUpload.objects.get(id=instance_id)
-            if instance.image and os.path.isfile(instance.image.path):
-                os.remove(instance.image.path)
-            if instance.output and os.path.isfile(instance.output.path):
-                os.remove(instance.output.path)
-            instance.delete()
-            logger.info(f"Auto-deleted ImageUpload {instance_id} and its files after {delay} seconds.")
-        except Exception as e:
-            logger.error(f"Failed to auto-delete ImageUpload {instance_id}: {e}")
-            
-    thread = threading.Thread(target=delete_task)
-    thread.daemon = True
-    thread.start()
 
 # Frontend View
 def home(request):
     if request.method == 'POST' and request.FILES.get('image'):
         try:
             file = request.FILES['image']
-            instance = ImageUpload.objects.create(image=file)
-
-            filename = f"{uuid.uuid4()}.png"
-            output_path = os.path.join(settings.MEDIA_ROOT, 'outputs', filename)
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-            # Process the image faster heavily using the global cached session
-            input_img = Image.open(instance.image.path)
+            
+            # Process the image fully in memory
+            input_img = Image.open(file)
             output_img = remove(input_img, session=session)
-            output_img.save(output_path)
+            
+            # Save the result to a BytesIO object
+            io_buf = BytesIO()
+            output_img.save(io_buf, format='PNG')
+            io_buf.seek(0)
+            
+            # Encode as Base64 data URI
+            base64_img = base64.b64encode(io_buf.read()).decode('utf-8')
+            output_url = f"data:image/png;base64,{base64_img}"
+            
+            # Construct a dummy object to conform to the existing template expectation
+            class DummyOutput:
+                url = output_url
+            class DummyImg:
+                output = DummyOutput()
 
-            instance.output.name = f"outputs/{filename}"
-            instance.save()
-
-            # Schedule deletion 2 minutes (120 seconds) after processing
-            schedule_image_deletion(instance.id, 120)
-
-            return render(request, 'result.html', {'img': instance})
+            return render(request, 'result.html', {'img': DummyImg()})
         
         except UnidentifiedImageError:
             return render(request, 'index.html', {'error': 'Invalid image format. Please upload a valid image.'})
@@ -64,7 +52,6 @@ def home(request):
 
     return render(request, 'index.html')
 
-
 # API View
 @api_view(['POST'])
 def remove_bg_api(request):
@@ -73,26 +60,20 @@ def remove_bg_api(request):
         return Response({'error': 'No image provided'}, status=400)
 
     try:
-        instance = ImageUpload.objects.create(image=file)
-
-        filename = f"{uuid.uuid4()}.png"
-        output_path = os.path.join(settings.MEDIA_ROOT, 'outputs', filename)
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-        input_img = Image.open(instance.image.path)
+        input_img = Image.open(file)
         output_img = remove(input_img, session=session)
-        output_img.save(output_path)
 
-        instance.output.name = f"outputs/{filename}"
-        instance.save()
-
-        # Schedule deletion 2 minutes (120 seconds) after processing
-        schedule_image_deletion(instance.id, 120)
+        # Save to BytesIO
+        io_buf = BytesIO()
+        output_img.save(io_buf, format='PNG')
+        io_buf.seek(0)
+        
+        base64_img = base64.b64encode(io_buf.read()).decode('utf-8')
+        output_url = f"data:image/png;base64,{base64_img}"
 
         return Response({
-            'id': instance.id,
-            'image': instance.image.url,
-            'output': instance.output.url
+            'image_processed': True,
+            'output': output_url
         })
     except UnidentifiedImageError:
         return Response({'error': 'Invalid image format. Please upload a valid image.'}, status=400)
