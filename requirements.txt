@@ -2,4 +2,3 @@ Django
 rembg
 whitenoise
 python-dotenv
-onnxruntime-cpu
